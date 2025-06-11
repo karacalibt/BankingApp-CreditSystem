@@ -12,7 +12,7 @@ Bu proje, modern bankacılık sektörü için geliştirilmiş bir **kredilendirm
 - **Programlama Dili:** C#
 - **Mimari:** Clean Architecture (Temiz Mimari)
 - **Pattern:** CQRS (Command Query Responsibility Segregation)
-- **ORM:** Entity Framework Core
+- **ORM:** Entity Framework Core 9.0
 - **API:** RESTful Web API
 - **Dokümantasyon:** Swagger/OpenAPI
 - **Database:** SQL Server
@@ -42,7 +42,10 @@ BankingApp.CreditSystem/
 ├── BankingApp.CreditSystem.sln              ← Solution dosyası
 ├── BankingApp.CreditSystem.Core/            ← Core Katmanı (Çekirdek)
 │   ├── Repositories/
-│   │   └── Entity.cs                        ← Base Entity sınıfı (Generic)
+│   │   ├── Entity.cs                        ← Base Entity sınıfı (Generic, Protected Constructor)
+│   │   ├── IRepository.cs                   ← Generic Repository Interface (EF Core optimized)
+│   │   ├── EfRepository.cs                  ← Generic EF Core implementasyonu
+│   │   └── PagedResult.cs                   ← Sayfalama sonuç modeli
 │   └── BankingApp.CreditSystem.Core.csproj
 ├── BankingApp.CreditSystem.Domain/          ← Domain Katmanı (İş Kuralları)
 │   ├── Entities/                            ← Concrete entity'ler
@@ -74,16 +77,47 @@ BankingApp.CreditSystem/
 
 ## 🔧 Temel Özellikler
 
-- ✅ Müşteri bilgileri yönetimi (Bireysel & Kurumsal)
-- ✅ Kredi başvurusu oluşturma ve takibi
+- ✅ **Müşteri bilgileri yönetimi** (Bireysel & Kurumsal)
+- ✅ **Generic Repository Pattern** (IRepository + EfRepository)
+- ✅ **Entity Framework Core 9.0** entegrasyonu
+- ✅ **Clean Architecture** yapısı
+- ✅ **Base Entity** sistem (Id, CreatedDate, UpdatedDate, DeletedDate)
+- ✅ **Sayfalama desteği** (PagedResult)
+- ⏳ Kredi başvurusu oluşturma ve takibi (Geliştirme aşamasında)
 - ⏳ Otomatik kredi skoru hesaplama (Geliştirme aşamasında)
 - ⏳ Risk analizi ve değerlendirme (Geliştirme aşamasında)
 - ⏳ Otomatik onay/red algoritması (Geliştirme aşamasında)
-- ⏳ Kredi limiti ve faiz oranı belirleme (Geliştirme aşamasında)
-- ⏳ Başvuru durumu real-time takibi (Geliştirme aşamasında)
-- ⏳ Kapsamlı raporlama ve analitik (Geliştirme aşamasında)
 - ⏳ RESTful API desteği (Geliştirme aşamasında)
 - ⏳ Güvenli authentication ve authorization (Geliştirme aşamasında)
+
+## 🎨 Generic Repository Özellikleri
+
+Repository pattern Entity Framework Core 9.0 ile tam uyumlu şekilde geliştirilmiştir:
+
+### 📊 Temel Özellikler:
+- **IQueryable Support** - Direct LINQ erişimi
+- **No-Tracking Support** - Performance optimization
+- **Include Navigation** - Related entity loading
+- **OrderBy Support** - Flexible sorting
+- **Pagination** - Full pagination with metadata
+- **Aggregations** - Count, Sum, Max, Min, Average
+- **Bulk Operations** - AddRange, UpdateRange, DeleteRange
+
+### 💡 Kullanım Örneği:
+```csharp
+// Repository kullanımı
+var repository = new EfRepository<Customer, Guid>(dbContext);
+
+// Include ile related data
+var customer = await repository.GetByIdAsync(id, 
+    c => c.CreditApplications);
+
+// Pagination ile listeleme
+var pagedResult = await repository.GetPagedListAsync(
+    predicate: c => c.IsActive,
+    orderBy: q => q.OrderByDescending(c => c.CreatedDate),
+    pageIndex: 0, pageSize: 10);
+```
 
 ## 📊 İş Akışı
 
@@ -99,9 +133,9 @@ BankingApp.CreditSystem/
 
 ### Ön Gereksinimler
 
-- .NET 9 SDK
-- SQL Server (LocalDB desteklenir)
-- Visual Studio 2022 veya Visual Studio Code
+- **.NET 9 SDK**
+- **SQL Server** (LocalDB desteklenir)
+- **Visual Studio 2022** veya **Visual Studio Code**
 
 ### Adımlar
 
@@ -133,11 +167,41 @@ BankingApp.CreditSystem/
 dotnet test
 ```
 
+## 📦 NuGet Paketleri
+
+### Core Katmanı:
+- `Microsoft.EntityFrameworkCore` (9.0.0)
+
+### Persistence Katmanı:
+- `Microsoft.EntityFrameworkCore` (9.0.0)
+- `Microsoft.EntityFrameworkCore.SqlServer` (9.0.0)
+- `Microsoft.EntityFrameworkCore.Tools` (9.0.0)
+
+### WebApi Katmanı:
+- `Microsoft.EntityFrameworkCore.Design` (9.0.0)
+
 ## 📝 Geliştirme Durumu
 
 Proje aktif geliştirme aşamasındadır. Güncel durum için `todo.md` dosyasına bakınız.
 
-**Tamamlanma Oranı:** %13 (15/119 görev)
+**Tamamlanma Oranı:** %17 (20/119 görev)
+**Son Güncelleme:** 11/06/2025 23:03
+
+### ✅ Tamamlanan Özellikler:
+- Solution ve proje yapısı oluşturulması
+- Clean Architecture katman referansları
+- Base Entity sınıfı (Generic)
+- Generic Repository Interface (EF Core optimized)
+- Generic Repository Implementation (EfRepository)
+- PagedResult pagination modeli
+- Customer entity hierarchy (Individual/Corporate)
+- Entity Framework Core 9.0 entegrasyonu
+
+### 🚧 Geliştirilmekte:
+- DbContext ve Entity Configurations
+- CQRS pattern implementation (Application layer)
+- Domain services ve business rules
+- WebAPI controllers ve endpoints
 
 ## 🤝 Katkıda Bulunma
 

@@ -82,7 +82,10 @@ BankingApp.CreditSystem/
 ├── BankingApp.CreditSystem.sln              ← Solution dosyası
 ├── BankingApp.CreditSystem.Core/            ← Core Katmanı (Çekirdek)
 │   ├── Repositories/
-│   │   └── Entity.cs                        ← Base Entity sınıfı (Generic, Protected Constructor, default!)
+│   │   ├── Entity.cs                        ← Base Entity sınıfı (Generic, Protected Constructor, default!)
+│   │   ├── IRepository.cs                   ← Generic Repository Interface (EF Core optimized)
+│   │   ├── EfRepository.cs                  ← Generic EF Core implementasyonu (Core katmanında)
+│   │   └── PagedResult.cs                   ← Sayfalama sonuç modeli
 │   └── BankingApp.CreditSystem.Core.csproj
 ├── BankingApp.CreditSystem.Domain/          ← Domain Katmanı (İş Kuralları)
 │   ├── Entities/                            ← Concrete entity'ler
@@ -110,7 +113,7 @@ WebApi ──→ Application ──→ Domain ──→ Core
 ```
 
 ### 📦 Namespace Yapısı
-- **Core:** `BankingApp.CreditSystem.Core.Repositories`
+- **Core:** `BankingApp.CreditSystem.Core.Repositories` (Entity, IRepository, EfRepository, PagedResult)
 - **Domain:** `BankingApp.CreditSystem.Domain.Entities`
 - **Application:** `BankingApp.CreditSystem.Application.*`
 - **Persistence:** `BankingApp.CreditSystem.Persistence.*`
@@ -132,7 +135,9 @@ WebApi ──→ Application ──→ Domain ──→ Core
 ## 🔧 Core Katmanı Geliştirme
 - [x] Repositories klasör yapısının oluşturulması
 - [x] Base Entity class'ı oluşturulması (Generic Id tipi ile, Protected Constructor, default! değeri)
-- [ ] IRepository interface'i tanımlanması
+- [x] IRepository interface'i tanımlanması (EF Core IQueryable pattern, Include, OrderBy, No-Tracking, Aggregations)
+- [x] PagedResult model'i oluşturulması (Sayfalama sonuçları için)
+- [x] EfRepository<TEntity, TId> generic implementasyonu (Core katmanında, tam EF Core uyumlu)
 - [ ] IUnitOfWork interface'i tanımlanması
 - [ ] Common value objects oluşturulması
 - [ ] Domain events için base class'lar oluşturulması
@@ -179,11 +184,10 @@ WebApi ──→ Application ──→ Domain ──→ Core
 - [ ] Logging behavior'u eklenmesi
 
 ## 💾 Persistence Katmanı Geliştirme
-- [ ] Entity Framework Core package'larının eklenmesi
+- [x] Entity Framework Core package'larının eklenmesi (9.0.0 - Core, SqlServer, Tools, Design)
 - [ ] ApplicationDbContext oluşturulması
 - [ ] Entity configuration'larının yazılması
 - [ ] Migration'ların oluşturulması
-- [ ] Repository pattern implementasyonu
 - [ ] Unit of Work pattern implementasyonu
 - [ ] Seed data oluşturulması
 - [ ] Database connection string konfigürasyonu
@@ -260,8 +264,8 @@ WebApi ──→ Application ──→ Domain ──→ Core
 
 ## 📅 Proje Durumu
 **Başlangıç Tarihi:** $(Get-Date -Format "dd/MM/yyyy")  
-**Son Güncelleme:** 11/06/2025 18:00  
-**Tamamlanma Oranı:** %13 (15/119 görev)
+**Son Güncelleme:** 11/06/2025 23:03  
+**Tamamlanma Oranı:** %17 (20/119 görev)
 
 ---
 
@@ -271,4 +275,5 @@ WebApi ──→ Application ──→ Domain ──→ Core
 - Tüm katmanlar arasındaki bağımlılıklar Clean Architecture prensiplere uygun şekilde kurulmuştur
 - Her katmanın kendi sorumluluğu vardır ve test edilebilir yapıda tasarlanmıştır
 - Entity'lerde XML dokümantasyon yorumları (///) kullanılmamaktadır - temiz kod prensibi
-- Customer entity'leri Entity<Guid> kullanarak sadeleştirilmiş formatta tasarlanmıştır 
+- Customer entity'leri Entity<Guid> kullanarak sadeleştirilmiş formatta tasarlanmıştır
+- Generic Repository (IRepository + EfRepository) Core katmanında Entity Framework Core 9.0 ile tam uyumlu implementasyon 

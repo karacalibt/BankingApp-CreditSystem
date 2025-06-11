@@ -1,0 +1,19 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+-Proje ve istemle ilgili kurulu mcp var mı kontrol et varsa kullan.
+-Projede todo.md dosyası var mı kontrol et, varsa gözden geçir ve projede buna göre ilerle, todo.md dosyası yoksa oluştur ve proje ile ilgili ilk prompten itibaren kullanıcının istediği bilgileri, teknolojileri, dili, mimari yapıları, ve yapmak istediklerini todo.md dosyasına ekle.
+❌ XML Dokümantasyon yorumları yok (/// <summary> vb.)
+❌ Gereksiz açıklama yorumları yok
+✅ Sadece temiz, okunabilir kod
+✅ Açıklayıcı property/method isimleri
+✅ Minimal ve anlaşılır yapı
+Bu standart artık tüm gelecek dosyalar için geçerli olacak:
+-Entity'ler
+-Interface'ler
+-Service'ler
+-Controller'lar
+
+-Diğer tüm C# dosyaları

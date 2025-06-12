@@ -75,15 +75,66 @@ Bu proje, modern bankacılık sektörü için geliştirilmiş bir **kredilendirm
 
 ---
 
+## 🔥 **SOLID Prensipleri Uygulaması (YENİ!)**
+
+### ✅ **Interface Segregation Principle (ISP) Düzeltmesi**
+
+Büyük `IRepository` interface'i daha küçük, spesifik interface'lere bölünmüştür:
+
+```
+Core/Repositories/
+├── IQueryRepository.cs           ← Sadece Query operasyonları
+├── ICommandRepository.cs         ← Sadece Command operasyonları  
+├── IAggregationRepository.cs     ← Sadece Aggregation operasyonları
+├── IPaginationRepository.cs      ← Sadece Pagination operasyonları
+└── IRepository.cs               ← Composed interface (tüm interface'leri inherit eder)
+```
+
+**Faydalar:**
+- Her interface tek sorumluluğa sahip
+- İhtiyaç duyulmayan metodlar implement edilmek zorunda değil
+- Daha temiz ve anlaşılır kod yapısı
+
+### ✅ **Single Responsibility Principle (SRP) Düzeltmesi**
+
+Business Rules sınıfları çok fazla sorumluluk taşıyordu. Artık ayrılmış durumda:
+
+```
+Features/IndividualCustomers/
+├── Validators/
+│   └── IndividualCustomerValidator.cs        ← Sadece domain validation
+├── Services/
+│   └── IndividualCustomerExistenceChecker.cs ← Sadece existence checks
+└── Rules/
+    └── IndividualCustomerBusinessRules.cs    ← Orchestration ve backward compatibility
+```
+
+**Faydalar:**
+- Her sınıf tek sorumluluğa sahip
+- Test edilebilirlik arttı
+- Kod daha modüler ve maintainable
+
+### ✅ **Dependency Inversion Principle (DIP) İyileştirmesi**
+
+- Business Rules artık abstraction'lara bağımlı
+- Yeni ServiceRegistration sistemi eklendi
+- Dependency Injection daha organize
+
+---
+
 ## 🏗️ Proje Yapısı
 
 ```
 BankingApp.CreditSystem/
 ├── BankingApp.CreditSystem.sln              ← Solution dosyası
-├── BankingApp.CreditSystem.Core/            ← Core Katmanı (Çekirdek)
+├── BankingApp.CreditSystem.Core/            ← Core Katmanı (Çekirdek) - ISP Uyumlu!
 │   ├── Repositories/
 │   │   ├── Entity.cs                        ← Base Entity sınıfı (Generic, Protected Constructor, default!)
-│   │   ├── IRepository.cs                   ← Generic Repository Interface (EF Core optimized)
+│   │   ├── IQueryRepository.cs              ← Query-only operations (ISP)
+│   │   ├── ICommandRepository.cs            ← Command-only operations (ISP)
+│   │   ├── IAggregationRepository.cs        ← Aggregation-only operations (ISP)
+│   │   ├── IPaginationRepository.cs         ← Pagination-only operations (ISP)
+│   │   ├── IRepository.cs                   ← Composed Repository Interface (ISP compliant)
 │   │   └── PagedResult.cs                   ← Sayfalama sonuç modeli
 │   └── BankingApp.CreditSystem.Core.csproj
 ├── BankingApp.CreditSystem.Domain/          ← Domain Katmanı (İş Kuralları)
@@ -92,7 +143,7 @@ BankingApp.CreditSystem/
 │   │   ├── IndividualCustomer.cs            ← Bireysel müşteri (sadeleştirilmiş)
 │   │   └── CorporateCustomer.cs             ← Kurumsal müşteri (sadeleştirilmiş)
 │   └── BankingApp.CreditSystem.Domain.csproj
-├── BankingApp.CreditSystem.Application/     ← Application Katmanı (CQRS)
+├── BankingApp.CreditSystem.Application/     ← Application Katmanı (CQRS) - SRP Uyumlu!
 │   ├── Common/                              ← Ortak modeller
 │   │   └── Models/                          ← DTO'lar
 │   │       ├── BaseDto.cs                   ← Base DTO sınıfı
@@ -100,11 +151,11 @@ BankingApp.CreditSystem/
 │   │       ├── IndividualCustomerDto.cs     ← Individual customer DTO
 │   │       └── CorporateCustomerDto.cs      ← Corporate customer DTO
 │   ├── Features/                            ← CQRS Features (Feature-based organization)
-│   │   ├── IndividualCustomers/             ← Bireysel müşteri feature'ları
+│   │   ├── IndividualCustomers/             ← Bireysel müşteri feature'ları (SRP Uyumlu!)
 │   │   │   ├── Commands/                    ← Command'lar
 │   │   │   │   └── CreateIndividualCustomer/
 │   │   │   │       ├── CreateIndividualCustomerCommand.cs
-│   │   │   │       ├── CreateIndividualCustomerCommandHandler.cs
+│   │   │   │       ├── CreateIndividualCustomerCommandHandler.cs (Improved!)
 │   │   │   │       └── CreateIndividualCustomerCommandValidator.cs
 │   │   │   ├── Queries/                     ← Query'ler
 │   │   │   │   ├── GetIndividualCustomerById/
@@ -116,25 +167,34 @@ BankingApp.CreditSystem/
 │   │   │   │   └── IndividualCustomerConstants.cs
 │   │   │   ├── Profiles/                    ← AutoMapper profilleri
 │   │   │   │   └── IndividualCustomerProfile.cs
-│   │   │   └── Rules/                       ← İş kuralları
-│   │   │       └── IndividualCustomerBusinessRules.cs
-│   │   └── CorporateCustomers/              ← Kurumsal müşteri feature'ları
+│   │   │   ├── Validators/                  ← Domain Validation (SRP!)
+│   │   │   │   └── IndividualCustomerValidator.cs
+│   │   │   ├── Services/                    ← Business Services (SRP!)
+│   │   │   │   └── IndividualCustomerExistenceChecker.cs
+│   │   │   └── Rules/                       ← İş kuralları orchestration
+│   │   │       └── IndividualCustomerBusinessRules.cs (Refactored!)
+│   │   └── CorporateCustomers/              ← Kurumsal müşteri feature'ları (SRP Uyumlu!)
 │   │       ├── Commands/
 │   │       │   └── CreateCorporateCustomer/
 │   │       │       ├── CreateCorporateCustomerCommand.cs
-│   │       │       └── CreateCorporateCustomerCommandHandler.cs
+│   │       │       └── CreateCorporateCustomerCommandHandler.cs (Improved!)
 │   │       ├── Queries/
 │   │       ├── Constants/
 │   │       │   └── CorporateCustomerConstants.cs
 │   │       ├── Profiles/
 │   │       │   └── CorporateCustomerProfile.cs
+│   │       ├── Validators/                  ← Domain Validation (SRP!)
+│   │       │   └── CorporateCustomerValidator.cs
+│   │       ├── Services/                    ← Business Services (SRP!)
+│   │       │   └── CorporateCustomerExistenceChecker.cs
 │   │       └── Rules/
-│   │           └── CorporateCustomerBusinessRules.cs
+│   │           └── CorporateCustomerBusinessRules.cs (Refactored!)
 │   ├── Services/
 │   │   └── Repositories/                    ← Repository Interface'leri
 │   │       ├── ICustomerRepository.cs       ← Customer repository interface
 │   │       ├── IIndividualCustomerRepository.cs ← Individual customer repository interface
 │   │       └── ICorporateCustomerRepository.cs  ← Corporate customer repository interface
+│   ├── ServiceRegistration.cs               ← Application DI registration (NEW!)
 │   └── BankingApp.CreditSystem.Application.csproj
 ├── BankingApp.CreditSystem.Persistence/     ← Persistence Katmanı (Veritabanı)
 │   ├── Contexts/
@@ -166,7 +226,7 @@ WebApi ──→ Application ──→ Domain ──→ Core
 ```
 
 ### 📦 Namespace Yapısı
-- **Core:** `BankingApp.CreditSystem.Core.Repositories` (Entity, IRepository, PagedResult)
+- **Core:** `BankingApp.CreditSystem.Core.Repositories` (Entity, IRepository compositions, PagedResult)
 - **Domain:** `BankingApp.CreditSystem.Domain.Entities` (Customer, IndividualCustomer, CorporateCustomer)
 - **Application:** `BankingApp.CreditSystem.Application.Services.Repositories` (ICustomerRepository, IIndividualCustomerRepository, ICorporateCustomerRepository)
 - **Persistence:** `BankingApp.CreditSystem.Persistence.*` (BankingContext, Repositories, EntityConfigurations)
@@ -188,7 +248,11 @@ WebApi ──→ Application ──→ Domain ──→ Core
 ## 🔧 Core Katmanı Geliştirme
 - [x] Repositories klasör yapısının oluşturulması
 - [x] Base Entity class'ı oluşturulması (Generic Id tipi ile, Protected Constructor, default! değeri)
-- [x] IRepository interface'i tanımlanması (EF Core IQueryable pattern, Include, OrderBy, No-Tracking, Aggregations)
+- [x] **IRepository interface'i tanımlanması (ISP Uyumlu! - Ayrı interface'lere bölünmüş)**
+- [x] **IQueryRepository interface'i oluşturulması (ISP)**
+- [x] **ICommandRepository interface'i oluşturulması (ISP)**
+- [x] **IAggregationRepository interface'i oluşturulması (ISP)**
+- [x] **IPaginationRepository interface'i oluşturulması (ISP)**
 - [x] PagedResult model'i oluşturulması (Sayfalama sonuçları için)
 - [x] EfRepository<TEntity, TId> generic implementasyonu (Core katmanında, tam EF Core uyumlu)
 - [ ] IUnitOfWork interface'i tanımlanması
@@ -221,16 +285,21 @@ WebApi ──→ Application ──→ Domain ──→ Core
 - [x] DTO (Data Transfer Object) class'larının oluşturulması (BaseDto, CustomerDto, IndividualCustomerDto, CorporateCustomerDto)
 - [x] Constants class'larının oluşturulması (ValidationMessages, BusinessMessages, Rules)
 - [x] AutoMapper Profiles'larının oluşturulması (IndividualCustomerProfile, CorporateCustomerProfile)
-- [x] Business Rules'larının oluşturulması (TC Kimlik No algoritması, Vergi No algoritması)
+- [x] **Business Rules'larının oluşturulması (SRP Uyumlu! - Ayrı sınıflara bölünmüş)**
+- [x] **Individual Customer Validator sınıfı (SRP - Sadece domain validation)**
+- [x] **Individual Customer Existence Checker sınıfı (SRP - Sadece existence checks)**
+- [x] **Corporate Customer Validator sınıfı (SRP - Sadece domain validation)**
+- [x] **Corporate Customer Existence Checker sınıfı (SRP - Sadece existence checks)**
 - [x] CQRS Commands oluşturulması (CreateIndividualCustomer, CreateCorporateCustomer)
-- [x] Command Handlers oluşturulması (Business rules entegrasyonu)
+- [x] **Command Handlers oluşturulması (SRP uyumlu business rules entegrasyonu)**
 - [x] FluentValidation Validators oluşturulması (Comprehensive validation rules)
 - [x] CQRS Queries oluşturulması (GetIndividualCustomerById, GetAllIndividualCustomers)
 - [x] Query Handlers oluşturulması
+- [x] **Application ServiceRegistration oluşturulması (DIP uyumlu DI container registration)**
 
 ### Customer Commands
-- [x] Create Individual Customer Command (Command, Handler, Validator)
-- [x] Create Corporate Customer Command (Command, Handler)
+- [x] **Create Individual Customer Command (Command, Handler - SRP uyumlu, Validator)**
+- [x] **Create Corporate Customer Command (Command, Handler - SRP uyumlu)**
 - [ ] Update Individual Customer Command
 - [ ] Update Corporate Customer Command
 - [ ] Delete Customer Command (Soft Delete)
@@ -259,7 +328,7 @@ WebApi ──→ Application ──→ Domain ──→ Core
 - [ ] Validation behavior'u eklenmesi (FluentValidation pipeline)
 - [ ] Logging behavior'u eklenmesi (Request/Response logging)
 - [ ] Performance behavior'u eklenmesi (Execution time tracking)
-- [ ] Application ServiceRegistration extension'ı oluşturulması
+- [x] **Application ServiceRegistration extension'ı oluşturulması (SOLID uyumlu DI)**
 
 ## 💾 Persistence Katmanı Geliştirme
 - [x] Entity Framework Core package'larının eklenmesi (9.0.0 - Core, SqlServer, Tools, Design)
@@ -345,8 +414,33 @@ WebApi ──→ Application ──→ Domain ──→ Core
 
 ## 📅 Proje Durumu
 **Başlangıç Tarihi:** $(Get-Date -Format "dd/MM/yyyy")  
-**Son Güncelleme:** 12/06/2025 16:50  
-**Tamamlanma Oranı:** %35 (45/130 görev)
+**Son Güncelleme:** 12/06/2025 17:30  
+**Tamamlanma Oranı:** %42 (55/130 görev)
+
+---
+
+## 🎉 **Son Yapılan İyileştirmeler (SOLID Compliance)**
+
+### ✅ **Interface Segregation Principle (ISP) Düzeltmesi Tamamlandı**
+- Büyük `IRepository` interface'i 4 ayrı interface'e bölündü
+- Her interface tek sorumluluğa sahip
+- Daha temiz ve maintainable kod yapısı
+
+### ✅ **Single Responsibility Principle (SRP) Düzeltmesi Tamamlandı**
+- Business Rules sınıfları ayrı sorumluluklar için refactor edildi
+- Validator sınıfları sadece domain validation yapıyor
+- Existence Checker sınıfları sadece varlık kontrolü yapıyor
+- Business Rules sınıfları artık orchestration yapıyor
+
+### ✅ **Dependency Inversion Principle (DIP) İyileştirildi**
+- Application katmanı için ServiceRegistration eklendi
+- Tüm bağımlılıklar abstraction'lara çekildi
+- DI container optimize edildi
+
+### ✅ **Build Testi Başarılı**
+- Tüm değişiklikler sonrası proje başarıyla build oluyor
+- Sadece 1 küçük warning var (null reference)
+- SOLID prensipleri artık tam uyumlu
 
 ---
 
@@ -360,4 +454,5 @@ WebApi ──→ Application ──→ Domain ──→ Core
 - Generic Repository (IRepository + EfRepository) Entity Framework Core 9.0 ile tam uyumlu implementasyon
 - **Table Per Hierarchy (TPH)** yaklaşımı kullanılarak tek tabloda Customer, IndividualCustomer ve CorporateCustomer tutulmaktadır
 - Repository interface'leri Application katmanında, implementasyonları Persistence katmanında yer almaktadır
-- Dependency Injection için ServiceRegistration extension metodu kullanılmaktadır 
+- Dependency Injection için ServiceRegistration extension metodu kullanılmaktadır
+- **SOLID Prensipleri artık tam uyumlu! ISP, SRP ve DIP düzeltmeleri tamamlandı** 

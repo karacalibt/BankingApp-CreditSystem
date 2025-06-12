@@ -25,13 +25,8 @@ public class CreateCorporateCustomerCommandHandler : IRequestHandler<CreateCorpo
 
     public async Task<CorporateCustomerDto> Handle(CreateCorporateCustomerCommand request, CancellationToken cancellationToken)
     {
-        await _businessRules.CheckIfTaxNumberExistsAsync(request.TaxNumber);
-        await _businessRules.CheckIfEmailExistsAsync(request.Email);
-        await _businessRules.CheckIfPhoneNumberExistsAsync(request.PhoneNumber);
-        await _businessRules.CheckIfRegistrationNumberExistsAsync(request.CompanyRegistrationNumber);
-
-        _businessRules.ValidateTaxNumber(request.TaxNumber);
-        _businessRules.CheckCompanyAge(request.CompanyFoundationDate);
+        // Improved SRP-compliant business rules validation
+        await _businessRules.ValidateCreateRequestAsync(request);
 
         var customer = new CorporateCustomer
         {

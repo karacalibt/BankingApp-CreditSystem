@@ -1,26 +1,68 @@
 # 🏦 Banking Credit System
 
-**Banking Credit System** - .NET Core 9 ve Clean Architecture ile geliştirilmiş modern bankacılık kredilendirme sistemi
+Modern bankacılık sektörü için geliştirilmiş, **Clean Architecture** ve **CQRS** pattern'leri kullanılarak oluşturulmuş bir kredilendirme sistemidir.
 
-## 📋 Proje Tanımı
+## 🔥 **SOLID Prensipleri Compliance (YENİ!)**
 
-Bu proje, modern bankacılık sektörü için geliştirilmiş bir **kredilendirme sistemi**dir. Sistem, müşterilerin kredi başvurularını değerlendirme, kredi skorlarını hesaplama, risk analizi yapma ve otomatik kredi onay/red kararları verme süreçlerini dijitalleştirmektedir.
+Bu proje **SOLID prensipleri**ne tam uyumlu olarak geliştirilmiştir:
 
-## 🛠️ Teknoloji Stack
+### ✅ **Interface Segregation Principle (ISP)**
+```csharp
+// Büyük interface yerine küçük, spesifik interface'ler
+IQueryRepository<TEntity, TId>      // Sadece Query operasyonları
+ICommandRepository<TEntity, TId>    // Sadece Command operasyonları  
+IAggregationRepository<TEntity, TId> // Sadece Aggregation operasyonları
+IPaginationRepository<TEntity, TId>  // Sadece Pagination operasyonları
 
-- **Framework:** .NET Core 9
-- **Programlama Dili:** C#
-- **Mimari:** Clean Architecture (Temiz Mimari)
-- **Pattern:** CQRS (Command Query Responsibility Segregation)
-- **ORM:** Entity Framework Core 9.0
-- **API:** RESTful Web API
-- **Dokümantasyon:** Swagger/OpenAPI
-- **Database:** SQL Server
-- **Testing:** xUnit, Moq
-- **Logging:** Serilog
+// Composed interface
+IRepository<TEntity, TId> : IQueryRepository, ICommandRepository, IAggregationRepository, IPaginationRepository
+```
 
-## 🏗️ Mimari Yapısı
+### ✅ **Single Responsibility Principle (SRP)**
+```csharp
+// Her sınıf tek sorumluluğa sahip
+IndividualCustomerValidator        // Sadece domain validation
+IndividualCustomerExistenceChecker // Sadece existence checks
+IndividualCustomerBusinessRules    // Orchestration
+```
 
+### ✅ **Open/Closed Principle (OCP)**
+- Generic Repository pattern ile extensibility
+- Entity inheritance hierarchy
+- CQRS pattern ile query/command separation
+
+### ✅ **Liskov Substitution Principle (LSP)**
+- Customer hierarchy (IndividualCustomer, CorporateCustomer)
+- Repository implementations
+
+### ✅ **Dependency Inversion Principle (DIP)**
+- Interface'ler Application katmanında
+- Implementasyonlar Persistence katmanında
+- Clean Architecture dependency flow
+
+---
+
+## 🛠️ **Teknoloji Stack**
+
+| Kategori | Teknoloji | Versiyon |
+|----------|-----------|----------|
+| **Framework** | .NET Core | 9.0 |
+| **Language** | C# | 12.0 |
+| **Architecture** | Clean Architecture | ✅ |
+| **Pattern** | CQRS | ✅ |
+| **ORM** | Entity Framework Core | 9.0.0 |
+| **Database** | SQL Server | ✅ |
+| **Validation** | FluentValidation | 12.0.0 |
+| **Mapping** | AutoMapper | 14.0.0 |
+| **Mediator** | MediatR | 12.5.0 |
+| **API** | ASP.NET Core Web API | 9.0 |
+| **Documentation** | Swagger/OpenAPI | ✅ |
+
+---
+
+## 🏗️ **Mimari Yapı**
+
+### Clean Architecture Layers
 ```
 ┌─────────────────────────────────────────────┐
 │                  WebApi                     │ ← Presentation Layer
@@ -35,15 +77,31 @@ Bu proje, modern bankacılık sektörü için geliştirilmiş bir **kredilendirm
 └─────────────────────────────────────────────┘
 ```
 
+### Katman Bağımlılıkları
+```
+WebApi ──→ Application ──→ Domain ──→ Core
+   │            │             │
+   │            │             └──→ Core
+   │            └──→ Core
+   │
+   └──→ Persistence ──→ Application & Core
+```
+
+---
+
 ## 📁 Proje Yapısı
 
 ```
 BankingApp.CreditSystem/
 ├── BankingApp.CreditSystem.sln              ← Solution dosyası
-├── BankingApp.CreditSystem.Core/            ← Core Katmanı (Çekirdek)
+├── BankingApp.CreditSystem.Core/            ← Core Katmanı (ISP Uyumlu!)
 │   ├── Repositories/
 │   │   ├── Entity.cs                        ← Base Entity sınıfı (Generic, Protected Constructor)
-│   │   ├── IRepository.cs                   ← Generic Repository Interface (EF Core optimized)
+│   │   ├── IQueryRepository.cs              ← Query-only operations (ISP)
+│   │   ├── ICommandRepository.cs            ← Command-only operations (ISP)
+│   │   ├── IAggregationRepository.cs        ← Aggregation-only operations (ISP)
+│   │   ├── IPaginationRepository.cs         ← Pagination-only operations (ISP)
+│   │   ├── IRepository.cs                   ← Composed Repository Interface (ISP compliant)
 │   │   └── PagedResult.cs                   ← Sayfalama sonuç modeli
 │   └── BankingApp.CreditSystem.Core.csproj
 ├── BankingApp.CreditSystem.Domain/          ← Domain Katmanı (İş Kuralları)
@@ -52,20 +110,26 @@ BankingApp.CreditSystem/
 │   │   ├── IndividualCustomer.cs            ← Bireysel müşteri
 │   │   └── CorporateCustomer.cs             ← Kurumsal müşteri
 │   └── BankingApp.CreditSystem.Domain.csproj
-├── BankingApp.CreditSystem.Application/     ← Application Katmanı (CQRS)
+├── BankingApp.CreditSystem.Application/     ← Application Katmanı (SRP Uyumlu!)
+│   ├── Features/                            ← CQRS Features
+│   │   ├── IndividualCustomers/
+│   │   │   ├── Commands/CreateIndividualCustomer/
+│   │   │   ├── Queries/GetIndividualCustomerById/
+│   │   │   ├── Validators/                  ← Domain Validation (SRP!)
+│   │   │   ├── Services/                    ← Business Services (SRP!)
+│   │   │   └── Rules/                       ← Orchestration
+│   │   └── CorporateCustomers/
+│   │       ├── Commands/CreateCorporateCustomer/
+│   │       ├── Validators/                  ← Domain Validation (SRP!)
+│   │       ├── Services/                    ← Business Services (SRP!)
+│   │       └── Rules/                       ← Orchestration
 │   ├── Services/
 │   │   └── Repositories/                    ← Repository Interface'leri
-│   │       ├── ICustomerRepository.cs       ← Customer repository interface
-│   │       ├── IIndividualCustomerRepository.cs ← Individual customer repository interface
-│   │       └── ICorporateCustomerRepository.cs  ← Corporate customer repository interface
+│   ├── ServiceRegistration.cs               ← Application DI registration
 │   └── BankingApp.CreditSystem.Application.csproj
 ├── BankingApp.CreditSystem.Persistence/     ← Persistence Katmanı (Veritabanı)
 │   ├── Contexts/
 │   │   └── BankingContext.cs                ← DbContext (TPH yaklaşımı)
-│   ├── EntityConfigurations/                ← EF Core Configurations
-│   │   ├── CustomerEntityConfiguration.cs   ← Customer entity config
-│   │   ├── IndividualCustomerEntityConfiguration.cs ← Individual customer config
-│   │   └── CorporateCustomerEntityConfiguration.cs  ← Corporate customer config
 │   ├── Repositories/                        ← Repository Implementations
 │   │   ├── EfRepository.cs                  ← Generic EF Core implementasyonu
 │   │   ├── CustomerRepository.cs            ← Customer repository impl
@@ -73,91 +137,52 @@ BankingApp.CreditSystem/
 │   │   └── CorporateCustomerRepository.cs   ← Corporate customer repository impl
 │   ├── ServiceRegistration.cs               ← DI Container registration
 │   └── BankingApp.CreditSystem.Persistence.csproj
-├── BankingApp.CreditSystem.WebApi/          ← WebApi Katmanı (Presentation)
-│   └── BankingApp.CreditSystem.WebApi.csproj
-├── .gitignore                               ← Git ignore dosyası
-├── README.md                                ← Bu dosya
-└── todo.md                                  ← Proje roadmap'i
+└── BankingApp.CreditSystem.WebApi/          ← WebApi Katmanı (Presentation)
+    └── BankingApp.CreditSystem.WebApi.csproj
 ```
 
-## 🎯 Uygulama Amaçları
+---
 
-1. **Kredi Başvuru Süreci Otomasyonu:** Manuel süreçlerin dijitalleştirilmesi
-2. **Risk Değerlendirme:** Gelişmiş algoritmarla kredi risklerinin hesaplanması
-3. **Hızlı Karar Verme:** Anlık kredi onay/red kararları
-4. **Müşteri Deneyimi:** Kullanıcı dostu ve hızlı başvuru süreci
-5. **Operasyonel Verimlilik:** Banka personelinin iş yükünün azaltılması
-6. **Veri Yönetimi:** Kredi verilerinin merkezi ve güvenli yönetimi
-7. **Raporlama:** Detaylı analiz ve raporlama altyapısı
-8. **Uyumluluk:** Bankacılık mevzuatına uygun süreç yönetimi
+## 🚀 **Başlangıç**
 
-## 🔧 Temel Özellikler
+### Gereksinimler
+- **.NET 9.0 SDK**
+- **SQL Server** (LocalDB desteklenir)
+- **Visual Studio 2022** veya **Visual Studio Code**
 
-- ✅ **Müşteri bilgileri yönetimi** (Bireysel & Kurumsal)
-- ✅ **Generic Repository Pattern** (IRepository + EfRepository)
-- ✅ **Entity Framework Core 9.0** entegrasyonu
-- ✅ **Clean Architecture** yapısı
-- ✅ **Base Entity** sistem (Id, CreatedDate, UpdatedDate, DeletedDate)
-- ✅ **Sayfalama desteği** (PagedResult)
-- ✅ **DbContext implementasyonu** (BankingContext - TPH yaklaşımı)
-- ✅ **Entity Configurations** (EF Core mapping configurations)
-- ✅ **Repository implementasyonları** (Customer, IndividualCustomer, CorporateCustomer)
-- ✅ **Dependency Injection** (ServiceRegistration extension)
-- ✅ **🎯 CQRS Pattern** (MediatR implementation)
-- ✅ **🎯 Features-based Architecture** (Vertical slice architecture)
-- ✅ **🎯 AutoMapper Integration** (Entity ↔ DTO mapping)
-- ✅ **🎯 FluentValidation** (Comprehensive validation rules)
-- ✅ **🎯 Business Rules Engine** (Turkish ID/Tax validation algorithms)
-- ✅ **🎯 Constants Management** (Centralized messages & rules)
-- ⏳ Kredi başvurusu oluşturma ve takibi (Geliştirme aşamasında)
-- ⏳ Otomatik kredi skoru hesaplama (Geliştirme aşamasında)
-- ⏳ Risk analizi ve değerlendirme (Geliştirme aşamasında)
-- ⏳ Otomatik onay/red algoritması (Geliştirme aşamasında)
-- ⏳ RESTful API desteği (Geliştirme aşamasında)
-- ⏳ Güvenli authentication ve authorization (Geliştirme aşamasında)
+### Kurulum
 
-## 🎨 Generic Repository Özellikleri
+1. **Repository'yi klonlayın:**
+   ```bash
+   git clone https://github.com/karacalibt/BankingApp-CreditSystem.git
+   cd BankingApp-CreditSystem
+   ```
 
-Repository pattern Entity Framework Core 9.0 ile tam uyumlu şekilde geliştirilmiştir:
+2. **Bağımlılıkları yükleyin:**
+   ```bash
+   dotnet restore
+   ```
 
-### 📊 Temel Özellikler:
-- **IQueryable Support** - Direct LINQ erişimi
-- **No-Tracking Support** - Performance optimization
-- **Include Navigation** - Related entity loading
-- **OrderBy Support** - Flexible sorting
-- **Pagination** - Full pagination with metadata
-- **Aggregations** - Count, Sum, Max, Min, Average
-- **Bulk Operations** - AddRange, UpdateRange, DeleteRange
+3. **Projeyi build edin:**
+   ```bash
+   dotnet build
+   ```
 
-### 💡 Kullanım Örneği:
-```csharp
-// Repository kullanımı
-var customerRepository = new CustomerRepository(bankingContext);
+4. **Veritabanını oluşturun (gelecekte):**
+   ```bash
+   dotnet ef database update --project BankingApp.CreditSystem.Persistence
+   ```
 
-// Include ile related data
-var customer = await customerRepository.GetByIdAsync(customerId);
+5. **API'yi çalıştırın:**
+   ```bash
+   dotnet run --project BankingApp.CreditSystem.WebApi
+   ```
 
-// Pagination ile listeleme
-var pagedResult = await customerRepository.GetPagedListAsync(
-    predicate: c => c.IsActive,
-    orderBy: q => q.OrderByDescending(c => c.CreatedDate),
-    pageIndex: 0, pageSize: 10);
+---
 
-// Spesifik repository metodları
-var activeCustomers = await customerRepository.GetActiveCustomersAsync();
-var emailExists = await customerRepository.IsEmailExistsAsync("test@example.com");
+## 📊 **CQRS Pattern Kullanımı**
 
-// Individual customer repository
-var individualRepository = new IndividualCustomerRepository(bankingContext);
-var customerByNationalId = await individualRepository.GetByNationalIdAsync("12345678901");
-var customersByAge = await individualRepository.GetCustomersByAgeRangeAsync(25, 65);
-```
-
-## 🎯 CQRS Pattern Kullanımı
-
-Bu projede **MediatR** ile CQRS pattern implementasyonu yapılmıştır. İşte temel kullanım örnekleri:
-
-### 📋 Command Örneği (Bireysel Müşteri Oluşturma)
+### Command Örneği (Müşteri Oluşturma)
 ```csharp
 // Command (Request)
 public class CreateIndividualCustomerCommand : IRequest<IndividualCustomerDto>
@@ -166,17 +191,16 @@ public class CreateIndividualCustomerCommand : IRequest<IndividualCustomerDto>
     public string LastName { get; set; }
     public string NationalId { get; set; }
     public DateTime DateOfBirth { get; set; }
-    // ... diğer propertyler
+    // ... diğer özellikler
 }
 
-// Handler (Business Logic)
+// Handler (Business Logic) - SRP Uyumlu!
 public class CreateIndividualCustomerCommandHandler : IRequestHandler<CreateIndividualCustomerCommand, IndividualCustomerDto>
 {
     public async Task<IndividualCustomerDto> Handle(CreateIndividualCustomerCommand request, CancellationToken cancellationToken)
     {
-        // Business rules validation
-        await _businessRules.CheckIfNationalIdExistsAsync(request.NationalId);
-        _businessRules.ValidateNationalId(request.NationalId);
+        // Improved SRP-compliant business rules validation
+        await _businessRules.ValidateCreateRequestAsync(request);
         
         // Entity creation
         var customer = new IndividualCustomer { ... };
@@ -198,7 +222,7 @@ public class CreateIndividualCustomerCommandValidator : AbstractValidator<Create
 }
 ```
 
-### 📋 Query Örneği (Müşteri Sorgulama)
+### Query Örneği (Müşteri Sorgulama)
 ```csharp
 // Query (Request)
 public class GetIndividualCustomerByIdQuery : IRequest<IndividualCustomerDto?>
@@ -217,7 +241,7 @@ public class GetIndividualCustomerByIdQueryHandler : IRequestHandler<GetIndividu
 }
 ```
 
-### 📋 Controller Kullanımı (Gelecek WebAPI implementasyonu)
+### Controller Kullanımı (Gelecek WebAPI implementasyonu)
 ```csharp
 [ApiController]
 [Route("api/[controller]")]
@@ -252,7 +276,9 @@ Features/
 │   ├── Queries/GetIndividualCustomerById/    ← Müşteri sorgulama
 │   ├── Constants/                            ← Sabit değerler
 │   ├── Profiles/                             ← AutoMapper mappings
-│   └── Rules/                                ← Business rules
+│   ├── Validators/                           ← Domain validation (SRP!)
+│   ├── Services/                             ← Business services (SRP!)
+│   └── Rules/                                ← Business rules orchestration
 └── CorporateCustomers/
     └── ... (benzer yapı)
 ```
@@ -276,146 +302,165 @@ Customers (Table Per Hierarchy)
 ├── -- Individual Customer Fields --
 ├── FirstName (nvarchar(100))
 ├── LastName (nvarchar(100))
-├── NationalId (nchar(11), Unique Index)
-├── DateOfBirth (date)
+├── NationalId (nvarchar(11), Unique Index)
+├── DateOfBirth (datetime2)
 ├── MotherName (nvarchar(200), nullable)
 ├── FatherName (nvarchar(200), nullable)
 ├── -- Corporate Customer Fields --
 ├── CompanyName (nvarchar(300))
-├── TaxNumber (nchar(10), Unique Index)
+├── TaxNumber (nvarchar(10), Unique Index)
 ├── TaxOffice (nvarchar(200))
 ├── CompanyRegistrationNumber (nvarchar(20), Unique Index)
 ├── AuthorizedPersonName (nvarchar(200))
-└── CompanyFoundationDate (date)
+└── CompanyFoundationDate (datetime2)
 ```
 
-### 📈 Performans Optimizasyonları
-- **Unique Index'ler:** Email, PhoneNumber, NationalId, TaxNumber, CompanyRegistrationNumber
-- **Composite Index:** FirstName + LastName (Individual customers için)
-- **Filtreleme Index'leri:** IsActive, DateOfBirth, CompanyFoundationDate
-- **Discriminator Index:** CustomerType üzerinde otomatik index
-
-## 📊 İş Akışı
-
-1. **Başvuru:** Müşteri kredi başvurusunu oluşturur
-2. **Doğrulama:** Sistem müşteri bilgilerini doğrular
-3. **Skorlama:** Kredi skoru otomatik hesaplanır
-4. **Risk Analizi:** Gelişmiş algoritmarla risk değerlendirmesi yapılır
-5. **Karar:** Otomatik onay/red kararı verilir
-6. **Bildirim:** Müşteriye sonuç bildirilir
-7. **Takip:** Başvuru süreci takip edilir
-
-## 🚀 Kurulum
-
-### Ön Gereksinimler
-
-- **.NET 9 SDK**
-- **SQL Server** (LocalDB desteklenir)
-- **Visual Studio 2022** veya **Visual Studio Code**
-
-### Adımlar
-
-1. **Repository'yi klonlayın:**
-   ```bash
-   git clone https://github.com/karacalibt/BankingApp-CreditSystem.git
-   cd BankingApp-CreditSystem
-   ```
-
-2. **Projeyi restore edin:**
-   ```bash
-   dotnet restore
-   ```
-
-3. **Projeyi build edin:**
-   ```bash
-   dotnet build
-   ```
-
-4. **WebAPI'yi çalıştırın:**
-   ```bash
-   cd BankingApp.CreditSystem.WebApi
-   dotnet run
-   ```
-
-## 🧪 Test
-
-```bash
-dotnet test
+### 📊 Entity Relationship
+```mermaid
+erDiagram
+    CUSTOMERS {
+        Guid Id PK
+        string CustomerType
+        string PhoneNumber
+        string Email
+        string Address
+        bool IsActive
+        DateTime CreatedDate
+        DateTime UpdatedDate
+        DateTime DeletedDate
+        string FirstName
+        string LastName
+        string NationalId
+        DateTime DateOfBirth
+        string MotherName
+        string FatherName
+        string CompanyName
+        string TaxNumber
+        string TaxOffice
+        string CompanyRegistrationNumber
+        string AuthorizedPersonName
+        DateTime CompanyFoundationDate
+    }
 ```
-
-## 📦 NuGet Paketleri
-
-### Core Katmanı:
-- `Microsoft.EntityFrameworkCore` (9.0.0)
-
-### Application Katmanı:
-- `MediatR` (12.5.0) - CQRS pattern implementation
-- `AutoMapper` (14.0.0) - Object-to-object mapping
-- `FluentValidation` (12.0.0) - Validation rules engine
-
-### Persistence Katmanı:
-- `Microsoft.EntityFrameworkCore` (9.0.0)
-- `Microsoft.EntityFrameworkCore.SqlServer` (9.0.0)
-- `Microsoft.EntityFrameworkCore.Tools` (9.0.0)
-
-### WebApi Katmanı:
-- `Microsoft.EntityFrameworkCore.Design` (9.0.0)
-
-## 📝 Geliştirme Durumu
-
-Proje aktif geliştirme aşamasındadır. Güncel durum için `todo.md` dosyasına bakınız.
-
-**Tamamlanma Oranı:** %35 (45/130 görev)
-**Son Güncelleme:** 12/06/2025 16:50
-
-### ✅ Tamamlanan Özellikler:
-- Solution ve proje yapısı oluşturulması
-- Clean Architecture katman referansları
-- Base Entity sınıfı (Generic)
-- Generic Repository Interface (EF Core optimized)
-- Generic Repository Implementation (EfRepository)
-- PagedResult pagination modeli
-- Customer entity hierarchy (Individual/Corporate)
-- Entity Framework Core 9.0 entegrasyonu
-- **BankingContext DbContext implementasyonu** (TPH yaklaşımı)
-- **Entity Configurations** (Customer, IndividualCustomer, CorporateCustomer)
-- **Repository implementasyonları** (Generic + Spesifik repository'ler)
-- **Application layer repository interface'leri** (Clean Architecture uyumlu)
-- **Dependency Injection** (ServiceRegistration extension)
-- **📋 CQRS Pattern implementasyonu** (MediatR 12.5.0)
-- **📋 Features-based organization** (IndividualCustomers, CorporateCustomers)
-- **📋 DTO Models** (BaseDto, CustomerDto, IndividualCustomerDto, CorporateCustomerDto)
-- **📋 AutoMapper Profiles** (Entity ↔ DTO mapping, computed properties)
-- **📋 Constants & Validation Messages** (Turkish localization)
-- **📋 Business Rules** (TC Kimlik No & Vergi No algorithms)
-- **📋 CQRS Commands** (CreateIndividualCustomer, CreateCorporateCustomer)
-- **📋 Command Handlers** (Business rules integration)
-- **📋 FluentValidation** (Comprehensive validation rules)
-- **📋 CQRS Queries** (GetIndividualCustomerById, GetAllIndividualCustomers)
-- **📋 Query Handlers** (Repository integration)
-
-### 🚧 Geliştirilmekte:
-- Database migration'ları ve veritabanı güncellemesi
-- Application ServiceRegistration extension (MediatR, AutoMapper, FluentValidation)
-- Validation ve Logging behaviors (MediatR pipeline)
-- WebAPI controllers ve endpoints
-
-## 🤝 Katkıda Bulunma
-
-1. Fork edin
-2. Feature branch oluşturun (`git checkout -b feature/amazing-feature`)
-3. Commit edin (`git commit -m 'Add amazing feature'`)
-4. Branch'i push edin (`git push origin feature/amazing-feature`)
-5. Pull Request oluşturun
-
-## 📄 Lisans
-
-Bu proje MIT lisansı altında lisanslanmıştır.
-
-## 📞 İletişim
-
-Proje sahibi: [@karacalibt](https://github.com/karacalibt)
 
 ---
 
-⭐ **Bu projeyi beğendiyseniz star vermeyi unutmayın!** 
+## 🔧 **Geliştirme Notları**
+
+### Business Rules (SOLID Uyumlu!)
+```csharp
+// SRP: Her sınıf tek sorumluluğa sahip
+public class IndividualCustomerValidator
+{
+    public void ValidateNationalId(string nationalId) { /* TC Kimlik algoritması */ }
+    public void ValidateAge(DateTime dateOfBirth) { /* Yaş kontrolü */ }
+}
+
+public class IndividualCustomerExistenceChecker
+{
+    public async Task CheckIfNationalIdExistsAsync(string nationalId) { /* DB kontrolü */ }
+    public async Task CheckIfEmailExistsAsync(string email) { /* DB kontrolü */ }
+}
+
+public class IndividualCustomerBusinessRules
+{
+    // Orchestration - diğer sınıfları koordine eder
+    public async Task ValidateCreateRequestAsync(CreateIndividualCustomerCommand request)
+    {
+        _validator.ValidateNationalId(request.NationalId);
+        _validator.ValidateAge(request.DateOfBirth);
+        await _existenceChecker.CheckIfNationalIdExistsAsync(request.NationalId);
+        await _existenceChecker.CheckIfEmailExistsAsync(request.Email);
+    }
+}
+```
+
+### Repository Pattern (ISP Uyumlu!)
+```csharp
+// ISP: Interface'ler küçük ve spesifik
+public interface IQueryRepository<TEntity, TId> where TEntity : Entity<TId>
+{
+    IQueryable<TEntity> Query();
+    Task<TEntity?> GetByIdAsync(TId id);
+    Task<IList<TEntity>> GetListAsync(Expression<Func<TEntity, bool>>? predicate = null);
+}
+
+public interface ICommandRepository<TEntity, TId> where TEntity : Entity<TId>
+{
+    TEntity Add(TEntity entity);
+    TEntity Update(TEntity entity);
+    void Delete(TEntity entity);
+    Task<int> SaveChangesAsync();
+}
+
+// Composed interface
+public interface IRepository<TEntity, TId> : 
+    IQueryRepository<TEntity, TId>, 
+    ICommandRepository<TEntity, TId>,
+    IAggregationRepository<TEntity, TId>,
+    IPaginationRepository<TEntity, TId>
+    where TEntity : Entity<TId>
+{
+}
+```
+
+### Validation Rules
+- **TC Kimlik No:** 11 haneli, algoritmik kontrol
+- **Vergi No:** 10 haneli, Türkiye algoritması
+- **Yaş Kontrolü:** 18-100 yaş arası (bireysel), 1-200 yıl (kurumsal)
+- **Email/Telefon:** Uniqueness kontrolü
+
+---
+
+## 🏁 **Proje Durumu**
+
+| Kategori | Tamamlanma | Açıklama |
+|----------|------------|----------|
+| **Core Katmanı** | %100 | ISP uyumlu interface'ler ✅ |
+| **Domain Katmanı** | %100 | Entity hierarchy ✅ |
+| **Application Katmanı** | %80 | SRP uyumlu business rules ✅ |
+| **Persistence Katmanı** | %90 | Repository implementations ✅ |
+| **WebApi Katmanı** | %0 | Henüz başlanmadı |
+| **SOLID Compliance** | %100 | Tüm prensipler uygulandı ✅ |
+
+**Genel Tamamlanma:** %42 (55/130 görev)
+
+---
+
+## 🤝 **Katkıda Bulunma**
+
+1. Fork yapın
+2. Feature branch oluşturun (`git checkout -b feature/amazing-feature`)
+3. Değişikliklerinizi commit edin (`git commit -m 'feat: Add amazing feature'`)
+4. Branch'inizi push edin (`git push origin feature/amazing-feature`)
+5. Pull Request oluşturun
+
+---
+
+## 📝 **Lisans**
+
+Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICENSE) dosyasına bakın.
+
+---
+
+## 👨‍💻 **Geliştirici**
+
+**Bekir Tokgöz**
+- GitHub: [@karacalibt](https://github.com/karacalibt)
+- Email: [email@example.com](mailto:email@example.com)
+
+---
+
+## 🎯 **Gelecek Planları**
+
+- [ ] WebAPI katmanının tamamlanması
+- [ ] Authentication & Authorization
+- [ ] Unit & Integration testleri
+- [ ] Docker containerization
+- [ ] Kredi skoru algoritması
+- [ ] Risk değerlendirme sistemi
+- [ ] Real-time notifications
+
+---
+
+*Bu proje Clean Architecture, CQRS, ve SOLID prensipleri kullanılarak modern .NET 9 teknolojileri ile geliştirilmiştir.* 

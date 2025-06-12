@@ -25,12 +25,8 @@ public class CreateIndividualCustomerCommandHandler : IRequestHandler<CreateIndi
 
     public async Task<IndividualCustomerDto> Handle(CreateIndividualCustomerCommand request, CancellationToken cancellationToken)
     {
-        await _businessRules.CheckIfNationalIdExistsAsync(request.NationalId);
-        await _businessRules.CheckIfEmailExistsAsync(request.Email);
-        await _businessRules.CheckIfPhoneNumberExistsAsync(request.PhoneNumber);
-
-        _businessRules.ValidateNationalId(request.NationalId);
-        _businessRules.CheckCustomerAge(request.DateOfBirth);
+        // Improved SRP-compliant business rules validation
+        await _businessRules.ValidateCreateRequestAsync(request);
 
         var customer = new IndividualCustomer
         {

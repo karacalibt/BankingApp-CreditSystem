@@ -103,6 +103,12 @@ BankingApp.CreditSystem/
 - ✅ **Entity Configurations** (EF Core mapping configurations)
 - ✅ **Repository implementasyonları** (Customer, IndividualCustomer, CorporateCustomer)
 - ✅ **Dependency Injection** (ServiceRegistration extension)
+- ✅ **🎯 CQRS Pattern** (MediatR implementation)
+- ✅ **🎯 Features-based Architecture** (Vertical slice architecture)
+- ✅ **🎯 AutoMapper Integration** (Entity ↔ DTO mapping)
+- ✅ **🎯 FluentValidation** (Comprehensive validation rules)
+- ✅ **🎯 Business Rules Engine** (Turkish ID/Tax validation algorithms)
+- ✅ **🎯 Constants Management** (Centralized messages & rules)
 - ⏳ Kredi başvurusu oluşturma ve takibi (Geliştirme aşamasında)
 - ⏳ Otomatik kredi skoru hesaplama (Geliştirme aşamasında)
 - ⏳ Risk analizi ve değerlendirme (Geliştirme aşamasında)
@@ -145,6 +151,110 @@ var emailExists = await customerRepository.IsEmailExistsAsync("test@example.com"
 var individualRepository = new IndividualCustomerRepository(bankingContext);
 var customerByNationalId = await individualRepository.GetByNationalIdAsync("12345678901");
 var customersByAge = await individualRepository.GetCustomersByAgeRangeAsync(25, 65);
+```
+
+## 🎯 CQRS Pattern Kullanımı
+
+Bu projede **MediatR** ile CQRS pattern implementasyonu yapılmıştır. İşte temel kullanım örnekleri:
+
+### 📋 Command Örneği (Bireysel Müşteri Oluşturma)
+```csharp
+// Command (Request)
+public class CreateIndividualCustomerCommand : IRequest<IndividualCustomerDto>
+{
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
+    public string NationalId { get; set; }
+    public DateTime DateOfBirth { get; set; }
+    // ... diğer propertyler
+}
+
+// Handler (Business Logic)
+public class CreateIndividualCustomerCommandHandler : IRequestHandler<CreateIndividualCustomerCommand, IndividualCustomerDto>
+{
+    public async Task<IndividualCustomerDto> Handle(CreateIndividualCustomerCommand request, CancellationToken cancellationToken)
+    {
+        // Business rules validation
+        await _businessRules.CheckIfNationalIdExistsAsync(request.NationalId);
+        _businessRules.ValidateNationalId(request.NationalId);
+        
+        // Entity creation
+        var customer = new IndividualCustomer { ... };
+        var createdCustomer = await _repository.AddAsync(customer);
+        
+        return _mapper.Map<IndividualCustomerDto>(createdCustomer);
+    }
+}
+
+// Validation (FluentValidation)
+public class CreateIndividualCustomerCommandValidator : AbstractValidator<CreateIndividualCustomerCommand>
+{
+    public CreateIndividualCustomerCommandValidator()
+    {
+        RuleFor(x => x.FirstName).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.NationalId).NotEmpty().Length(11).Must(BeNumeric);
+        // ... diğer kurallar
+    }
+}
+```
+
+### 📋 Query Örneği (Müşteri Sorgulama)
+```csharp
+// Query (Request)
+public class GetIndividualCustomerByIdQuery : IRequest<IndividualCustomerDto?>
+{
+    public Guid Id { get; set; }
+}
+
+// Handler (Data Retrieval)
+public class GetIndividualCustomerByIdQueryHandler : IRequestHandler<GetIndividualCustomerByIdQuery, IndividualCustomerDto?>
+{
+    public async Task<IndividualCustomerDto?> Handle(GetIndividualCustomerByIdQuery request, CancellationToken cancellationToken)
+    {
+        var customer = await _repository.GetByIdAsync(request.Id, cancellationToken);
+        return customer == null ? null : _mapper.Map<IndividualCustomerDto>(customer);
+    }
+}
+```
+
+### 📋 Controller Kullanımı (Gelecek WebAPI implementasyonu)
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+public class IndividualCustomersController : ControllerBase
+{
+    private readonly IMediator _mediator;
+
+    [HttpPost]
+    public async Task<ActionResult<IndividualCustomerDto>> Create(CreateIndividualCustomerCommand command)
+    {
+        var result = await _mediator.Send(command);
+        return Created($"/api/individualcustomers/{result.Id}", result);
+    }
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult<IndividualCustomerDto>> GetById(Guid id)
+    {
+        var result = await _mediator.Send(new GetIndividualCustomerByIdQuery(id));
+        return result == null ? NotFound() : Ok(result);
+    }
+}
+```
+
+### 🏗️ Features-Based Organization
+
+Projede **Vertical Slice Architecture** kullanılmıştır:
+
+```
+Features/
+├── IndividualCustomers/
+│   ├── Commands/CreateIndividualCustomer/    ← Müşteri oluşturma
+│   ├── Queries/GetIndividualCustomerById/    ← Müşteri sorgulama
+│   ├── Constants/                            ← Sabit değerler
+│   ├── Profiles/                             ← AutoMapper mappings
+│   └── Rules/                                ← Business rules
+└── CorporateCustomers/
+    └── ... (benzer yapı)
 ```
 
 ## 🗄️ Veritabanı Yapısı
@@ -238,6 +348,11 @@ dotnet test
 ### Core Katmanı:
 - `Microsoft.EntityFrameworkCore` (9.0.0)
 
+### Application Katmanı:
+- `MediatR` (12.5.0) - CQRS pattern implementation
+- `AutoMapper` (14.0.0) - Object-to-object mapping
+- `FluentValidation` (12.0.0) - Validation rules engine
+
 ### Persistence Katmanı:
 - `Microsoft.EntityFrameworkCore` (9.0.0)
 - `Microsoft.EntityFrameworkCore.SqlServer` (9.0.0)
@@ -250,8 +365,8 @@ dotnet test
 
 Proje aktif geliştirme aşamasındadır. Güncel durum için `todo.md` dosyasına bakınız.
 
-**Tamamlanma Oranı:** %25 (30/119 görev)
-**Son Güncelleme:** 12/06/2025 15:10
+**Tamamlanma Oranı:** %35 (45/130 görev)
+**Son Güncelleme:** 12/06/2025 16:50
 
 ### ✅ Tamamlanan Özellikler:
 - Solution ve proje yapısı oluşturulması
@@ -267,11 +382,22 @@ Proje aktif geliştirme aşamasındadır. Güncel durum için `todo.md` dosyası
 - **Repository implementasyonları** (Generic + Spesifik repository'ler)
 - **Application layer repository interface'leri** (Clean Architecture uyumlu)
 - **Dependency Injection** (ServiceRegistration extension)
+- **📋 CQRS Pattern implementasyonu** (MediatR 12.5.0)
+- **📋 Features-based organization** (IndividualCustomers, CorporateCustomers)
+- **📋 DTO Models** (BaseDto, CustomerDto, IndividualCustomerDto, CorporateCustomerDto)
+- **📋 AutoMapper Profiles** (Entity ↔ DTO mapping, computed properties)
+- **📋 Constants & Validation Messages** (Turkish localization)
+- **📋 Business Rules** (TC Kimlik No & Vergi No algorithms)
+- **📋 CQRS Commands** (CreateIndividualCustomer, CreateCorporateCustomer)
+- **📋 Command Handlers** (Business rules integration)
+- **📋 FluentValidation** (Comprehensive validation rules)
+- **📋 CQRS Queries** (GetIndividualCustomerById, GetAllIndividualCustomers)
+- **📋 Query Handlers** (Repository integration)
 
 ### 🚧 Geliştirilmekte:
 - Database migration'ları ve veritabanı güncellemesi
-- CQRS pattern implementation (Command/Query handlers)
-- Domain services ve business rules
+- Application ServiceRegistration extension (MediatR, AutoMapper, FluentValidation)
+- Validation ve Logging behaviors (MediatR pipeline)
 - WebAPI controllers ve endpoints
 
 ## 🤝 Katkıda Bulunma

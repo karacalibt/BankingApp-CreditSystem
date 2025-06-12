@@ -93,6 +93,43 @@ BankingApp.CreditSystem/
 │   │   └── CorporateCustomer.cs             ← Kurumsal müşteri (sadeleştirilmiş)
 │   └── BankingApp.CreditSystem.Domain.csproj
 ├── BankingApp.CreditSystem.Application/     ← Application Katmanı (CQRS)
+│   ├── Common/                              ← Ortak modeller
+│   │   └── Models/                          ← DTO'lar
+│   │       ├── BaseDto.cs                   ← Base DTO sınıfı
+│   │       ├── CustomerDto.cs               ← Customer abstract DTO
+│   │       ├── IndividualCustomerDto.cs     ← Individual customer DTO
+│   │       └── CorporateCustomerDto.cs      ← Corporate customer DTO
+│   ├── Features/                            ← CQRS Features (Feature-based organization)
+│   │   ├── IndividualCustomers/             ← Bireysel müşteri feature'ları
+│   │   │   ├── Commands/                    ← Command'lar
+│   │   │   │   └── CreateIndividualCustomer/
+│   │   │   │       ├── CreateIndividualCustomerCommand.cs
+│   │   │   │       ├── CreateIndividualCustomerCommandHandler.cs
+│   │   │   │       └── CreateIndividualCustomerCommandValidator.cs
+│   │   │   ├── Queries/                     ← Query'ler
+│   │   │   │   ├── GetIndividualCustomerById/
+│   │   │   │   │   ├── GetIndividualCustomerByIdQuery.cs
+│   │   │   │   │   └── GetIndividualCustomerByIdQueryHandler.cs
+│   │   │   │   └── GetAllIndividualCustomers/
+│   │   │   │       └── GetAllIndividualCustomersQuery.cs
+│   │   │   ├── Constants/                   ← Sabit değerler
+│   │   │   │   └── IndividualCustomerConstants.cs
+│   │   │   ├── Profiles/                    ← AutoMapper profilleri
+│   │   │   │   └── IndividualCustomerProfile.cs
+│   │   │   └── Rules/                       ← İş kuralları
+│   │   │       └── IndividualCustomerBusinessRules.cs
+│   │   └── CorporateCustomers/              ← Kurumsal müşteri feature'ları
+│   │       ├── Commands/
+│   │       │   └── CreateCorporateCustomer/
+│   │       │       ├── CreateCorporateCustomerCommand.cs
+│   │       │       └── CreateCorporateCustomerCommandHandler.cs
+│   │       ├── Queries/
+│   │       ├── Constants/
+│   │       │   └── CorporateCustomerConstants.cs
+│   │       ├── Profiles/
+│   │       │   └── CorporateCustomerProfile.cs
+│   │       └── Rules/
+│   │           └── CorporateCustomerBusinessRules.cs
 │   ├── Services/
 │   │   └── Repositories/                    ← Repository Interface'leri
 │   │       ├── ICustomerRepository.cs       ← Customer repository interface
@@ -177,28 +214,52 @@ WebApi ──→ Application ──→ Domain ──→ Core
 
 ## 💼 Application Katmanı (CQRS) Geliştirme
 - [x] Repository interface'lerinin oluşturulması (ICustomerRepository, IIndividualCustomerRepository, ICorporateCustomerRepository)
-- [ ] MediatR package'ının eklenmesi
-- [ ] Command ve Query base class'larının oluşturulması
-- [ ] DTO (Data Transfer Object) class'larının oluşturulması
+- [x] MediatR package'ının eklenmesi (12.5.0)
+- [x] AutoMapper package'ının eklenmesi (14.0.0)
+- [x] FluentValidation package'ının eklenmesi (12.0.0)
+- [x] Features klasör yapısının oluşturulması (IndividualCustomers, CorporateCustomers)
+- [x] DTO (Data Transfer Object) class'larının oluşturulması (BaseDto, CustomerDto, IndividualCustomerDto, CorporateCustomerDto)
+- [x] Constants class'larının oluşturulması (ValidationMessages, BusinessMessages, Rules)
+- [x] AutoMapper Profiles'larının oluşturulması (IndividualCustomerProfile, CorporateCustomerProfile)
+- [x] Business Rules'larının oluşturulması (TC Kimlik No algoritması, Vergi No algoritması)
+- [x] CQRS Commands oluşturulması (CreateIndividualCustomer, CreateCorporateCustomer)
+- [x] Command Handlers oluşturulması (Business rules entegrasyonu)
+- [x] FluentValidation Validators oluşturulması (Comprehensive validation rules)
+- [x] CQRS Queries oluşturulması (GetIndividualCustomerById, GetAllIndividualCustomers)
+- [x] Query Handlers oluşturulması
 
-### Commands
+### Customer Commands
+- [x] Create Individual Customer Command (Command, Handler, Validator)
+- [x] Create Corporate Customer Command (Command, Handler)
+- [ ] Update Individual Customer Command
+- [ ] Update Corporate Customer Command
+- [ ] Delete Customer Command (Soft Delete)
+
+### Customer Queries  
+- [x] Get Individual Customer by Id Query (Query, Handler)
+- [x] Get All Individual Customers Query (Pagination + Filtering)
+- [ ] Get Corporate Customer by Id Query
+- [ ] Get All Corporate Customers Query
+- [ ] Search Customers Query (Cross-entity search)
+
+### Credit Application Commands
 - [ ] Create Credit Application Command
 - [ ] Update Credit Application Command
 - [ ] Approve Credit Application Command
 - [ ] Reject Credit Application Command
 - [ ] Delete Credit Application Command
 
-### Queries
+### Credit Application Queries
 - [ ] Get Credit Application by Id Query
 - [ ] Get Credit Applications by Customer Query
 - [ ] Get Pending Credit Applications Query
 - [ ] Search Credit Applications Query
 
-### Handlers
-- [ ] Command handler'larının implementasyonu
-- [ ] Query handler'larının implementasyonu
-- [ ] Validation behavior'u eklenmesi
-- [ ] Logging behavior'u eklenmesi
+### Behaviors & Cross-Cutting Concerns
+- [ ] Validation behavior'u eklenmesi (FluentValidation pipeline)
+- [ ] Logging behavior'u eklenmesi (Request/Response logging)
+- [ ] Performance behavior'u eklenmesi (Execution time tracking)
+- [ ] Application ServiceRegistration extension'ı oluşturulması
 
 ## 💾 Persistence Katmanı Geliştirme
 - [x] Entity Framework Core package'larının eklenmesi (9.0.0 - Core, SqlServer, Tools, Design)
@@ -284,8 +345,8 @@ WebApi ──→ Application ──→ Domain ──→ Core
 
 ## 📅 Proje Durumu
 **Başlangıç Tarihi:** $(Get-Date -Format "dd/MM/yyyy")  
-**Son Güncelleme:** 12/06/2025 15:10  
-**Tamamlanma Oranı:** %25 (30/119 görev)
+**Son Güncelleme:** 12/06/2025 16:50  
+**Tamamlanma Oranı:** %35 (45/130 görev)
 
 ---
 

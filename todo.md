@@ -84,7 +84,6 @@ BankingApp.CreditSystem/
 │   ├── Repositories/
 │   │   ├── Entity.cs                        ← Base Entity sınıfı (Generic, Protected Constructor, default!)
 │   │   ├── IRepository.cs                   ← Generic Repository Interface (EF Core optimized)
-│   │   ├── EfRepository.cs                  ← Generic EF Core implementasyonu (Core katmanında)
 │   │   └── PagedResult.cs                   ← Sayfalama sonuç modeli
 │   └── BankingApp.CreditSystem.Core.csproj
 ├── BankingApp.CreditSystem.Domain/          ← Domain Katmanı (İş Kuralları)
@@ -94,8 +93,25 @@ BankingApp.CreditSystem/
 │   │   └── CorporateCustomer.cs             ← Kurumsal müşteri (sadeleştirilmiş)
 │   └── BankingApp.CreditSystem.Domain.csproj
 ├── BankingApp.CreditSystem.Application/     ← Application Katmanı (CQRS)
+│   ├── Services/
+│   │   └── Repositories/                    ← Repository Interface'leri
+│   │       ├── ICustomerRepository.cs       ← Customer repository interface
+│   │       ├── IIndividualCustomerRepository.cs ← Individual customer repository interface
+│   │       └── ICorporateCustomerRepository.cs  ← Corporate customer repository interface
 │   └── BankingApp.CreditSystem.Application.csproj
 ├── BankingApp.CreditSystem.Persistence/     ← Persistence Katmanı (Veritabanı)
+│   ├── Contexts/
+│   │   └── BankingContext.cs                ← DbContext (TPH yaklaşımı)
+│   ├── EntityConfigurations/                ← EF Core Configurations
+│   │   ├── CustomerEntityConfiguration.cs   ← Customer entity config
+│   │   ├── IndividualCustomerEntityConfiguration.cs ← Individual customer config
+│   │   └── CorporateCustomerEntityConfiguration.cs  ← Corporate customer config
+│   ├── Repositories/                        ← Repository Implementations
+│   │   ├── EfRepository.cs                  ← Generic EF Core implementasyonu
+│   │   ├── CustomerRepository.cs            ← Customer repository impl
+│   │   ├── IndividualCustomerRepository.cs  ← Individual customer repository impl
+│   │   └── CorporateCustomerRepository.cs   ← Corporate customer repository impl
+│   ├── ServiceRegistration.cs               ← DI Container registration
 │   └── BankingApp.CreditSystem.Persistence.csproj
 ├── BankingApp.CreditSystem.WebApi/          ← WebApi Katmanı (Presentation)
 │   └── BankingApp.CreditSystem.WebApi.csproj
@@ -113,10 +129,10 @@ WebApi ──→ Application ──→ Domain ──→ Core
 ```
 
 ### 📦 Namespace Yapısı
-- **Core:** `BankingApp.CreditSystem.Core.Repositories` (Entity, IRepository, EfRepository, PagedResult)
-- **Domain:** `BankingApp.CreditSystem.Domain.Entities`
-- **Application:** `BankingApp.CreditSystem.Application.*`
-- **Persistence:** `BankingApp.CreditSystem.Persistence.*`
+- **Core:** `BankingApp.CreditSystem.Core.Repositories` (Entity, IRepository, PagedResult)
+- **Domain:** `BankingApp.CreditSystem.Domain.Entities` (Customer, IndividualCustomer, CorporateCustomer)
+- **Application:** `BankingApp.CreditSystem.Application.Services.Repositories` (ICustomerRepository, IIndividualCustomerRepository, ICorporateCustomerRepository)
+- **Persistence:** `BankingApp.CreditSystem.Persistence.*` (BankingContext, Repositories, EntityConfigurations)
 - **WebApi:** `BankingApp.CreditSystem.WebApi.*`
 
 ---
@@ -160,6 +176,7 @@ WebApi ──→ Application ──→ Domain ──→ Core
 - [ ] Business rule validasyonları
 
 ## 💼 Application Katmanı (CQRS) Geliştirme
+- [x] Repository interface'lerinin oluşturulması (ICustomerRepository, IIndividualCustomerRepository, ICorporateCustomerRepository)
 - [ ] MediatR package'ının eklenmesi
 - [ ] Command ve Query base class'larının oluşturulması
 - [ ] DTO (Data Transfer Object) class'larının oluşturulması
@@ -185,9 +202,12 @@ WebApi ──→ Application ──→ Domain ──→ Core
 
 ## 💾 Persistence Katmanı Geliştirme
 - [x] Entity Framework Core package'larının eklenmesi (9.0.0 - Core, SqlServer, Tools, Design)
-- [ ] ApplicationDbContext oluşturulması
-- [ ] Entity configuration'larının yazılması
-- [ ] Migration'ların oluşturulması
+- [x] BankingContext DbContext oluşturulması (TPH yaklaşımı, auto-timestamps)
+- [x] Entity configuration'larının yazılması (Customer, IndividualCustomer, CorporateCustomer)
+- [x] Repository implementasyonlarının yazılması (EfRepository, CustomerRepository, IndividualCustomerRepository, CorporateCustomerRepository)
+- [x] Application katmanında repository interface'lerinin oluşturulması
+- [x] ServiceRegistration extension'ının oluşturulması (Dependency Injection)
+- [ ] Migration'ların oluşturulması ve veritabanı güncellemesi
 - [ ] Unit of Work pattern implementasyonu
 - [ ] Seed data oluşturulması
 - [ ] Database connection string konfigürasyonu
@@ -264,8 +284,8 @@ WebApi ──→ Application ──→ Domain ──→ Core
 
 ## 📅 Proje Durumu
 **Başlangıç Tarihi:** $(Get-Date -Format "dd/MM/yyyy")  
-**Son Güncelleme:** 11/06/2025 23:03  
-**Tamamlanma Oranı:** %17 (20/119 görev)
+**Son Güncelleme:** 12/06/2025 15:10  
+**Tamamlanma Oranı:** %25 (30/119 görev)
 
 ---
 
@@ -276,4 +296,7 @@ WebApi ──→ Application ──→ Domain ──→ Core
 - Her katmanın kendi sorumluluğu vardır ve test edilebilir yapıda tasarlanmıştır
 - Entity'lerde XML dokümantasyon yorumları (///) kullanılmamaktadır - temiz kod prensibi
 - Customer entity'leri Entity<Guid> kullanarak sadeleştirilmiş formatta tasarlanmıştır
-- Generic Repository (IRepository + EfRepository) Core katmanında Entity Framework Core 9.0 ile tam uyumlu implementasyon 
+- Generic Repository (IRepository + EfRepository) Entity Framework Core 9.0 ile tam uyumlu implementasyon
+- **Table Per Hierarchy (TPH)** yaklaşımı kullanılarak tek tabloda Customer, IndividualCustomer ve CorporateCustomer tutulmaktadır
+- Repository interface'leri Application katmanında, implementasyonları Persistence katmanında yer almaktadır
+- Dependency Injection için ServiceRegistration extension metodu kullanılmaktadır 

@@ -44,7 +44,6 @@ BankingApp.CreditSystem/
 │   ├── Repositories/
 │   │   ├── Entity.cs                        ← Base Entity sınıfı (Generic, Protected Constructor)
 │   │   ├── IRepository.cs                   ← Generic Repository Interface (EF Core optimized)
-│   │   ├── EfRepository.cs                  ← Generic EF Core implementasyonu
 │   │   └── PagedResult.cs                   ← Sayfalama sonuç modeli
 │   └── BankingApp.CreditSystem.Core.csproj
 ├── BankingApp.CreditSystem.Domain/          ← Domain Katmanı (İş Kuralları)
@@ -54,8 +53,25 @@ BankingApp.CreditSystem/
 │   │   └── CorporateCustomer.cs             ← Kurumsal müşteri
 │   └── BankingApp.CreditSystem.Domain.csproj
 ├── BankingApp.CreditSystem.Application/     ← Application Katmanı (CQRS)
+│   ├── Services/
+│   │   └── Repositories/                    ← Repository Interface'leri
+│   │       ├── ICustomerRepository.cs       ← Customer repository interface
+│   │       ├── IIndividualCustomerRepository.cs ← Individual customer repository interface
+│   │       └── ICorporateCustomerRepository.cs  ← Corporate customer repository interface
 │   └── BankingApp.CreditSystem.Application.csproj
 ├── BankingApp.CreditSystem.Persistence/     ← Persistence Katmanı (Veritabanı)
+│   ├── Contexts/
+│   │   └── BankingContext.cs                ← DbContext (TPH yaklaşımı)
+│   ├── EntityConfigurations/                ← EF Core Configurations
+│   │   ├── CustomerEntityConfiguration.cs   ← Customer entity config
+│   │   ├── IndividualCustomerEntityConfiguration.cs ← Individual customer config
+│   │   └── CorporateCustomerEntityConfiguration.cs  ← Corporate customer config
+│   ├── Repositories/                        ← Repository Implementations
+│   │   ├── EfRepository.cs                  ← Generic EF Core implementasyonu
+│   │   ├── CustomerRepository.cs            ← Customer repository impl
+│   │   ├── IndividualCustomerRepository.cs  ← Individual customer repository impl
+│   │   └── CorporateCustomerRepository.cs   ← Corporate customer repository impl
+│   ├── ServiceRegistration.cs               ← DI Container registration
 │   └── BankingApp.CreditSystem.Persistence.csproj
 ├── BankingApp.CreditSystem.WebApi/          ← WebApi Katmanı (Presentation)
 │   └── BankingApp.CreditSystem.WebApi.csproj
@@ -83,6 +99,10 @@ BankingApp.CreditSystem/
 - ✅ **Clean Architecture** yapısı
 - ✅ **Base Entity** sistem (Id, CreatedDate, UpdatedDate, DeletedDate)
 - ✅ **Sayfalama desteği** (PagedResult)
+- ✅ **DbContext implementasyonu** (BankingContext - TPH yaklaşımı)
+- ✅ **Entity Configurations** (EF Core mapping configurations)
+- ✅ **Repository implementasyonları** (Customer, IndividualCustomer, CorporateCustomer)
+- ✅ **Dependency Injection** (ServiceRegistration extension)
 - ⏳ Kredi başvurusu oluşturma ve takibi (Geliştirme aşamasında)
 - ⏳ Otomatik kredi skoru hesaplama (Geliştirme aşamasında)
 - ⏳ Risk analizi ve değerlendirme (Geliştirme aşamasında)
@@ -106,18 +126,64 @@ Repository pattern Entity Framework Core 9.0 ile tam uyumlu şekilde geliştiril
 ### 💡 Kullanım Örneği:
 ```csharp
 // Repository kullanımı
-var repository = new EfRepository<Customer, Guid>(dbContext);
+var customerRepository = new CustomerRepository(bankingContext);
 
 // Include ile related data
-var customer = await repository.GetByIdAsync(id, 
-    c => c.CreditApplications);
+var customer = await customerRepository.GetByIdAsync(customerId);
 
 // Pagination ile listeleme
-var pagedResult = await repository.GetPagedListAsync(
+var pagedResult = await customerRepository.GetPagedListAsync(
     predicate: c => c.IsActive,
     orderBy: q => q.OrderByDescending(c => c.CreatedDate),
     pageIndex: 0, pageSize: 10);
+
+// Spesifik repository metodları
+var activeCustomers = await customerRepository.GetActiveCustomersAsync();
+var emailExists = await customerRepository.IsEmailExistsAsync("test@example.com");
+
+// Individual customer repository
+var individualRepository = new IndividualCustomerRepository(bankingContext);
+var customerByNationalId = await individualRepository.GetByNationalIdAsync("12345678901");
+var customersByAge = await individualRepository.GetCustomersByAgeRangeAsync(25, 65);
 ```
+
+## 🗄️ Veritabanı Yapısı
+
+Bu projede **Table Per Hierarchy (TPH)** yaklaşımı kullanılmaktadır. Tüm customer türleri tek tabloda saklanır ve bir discriminator kolonu ile ayırt edilir.
+
+### 📋 Customers Tablosu (TPH)
+```sql
+Customers (Table Per Hierarchy)
+├── Id (Guid, PK) - NEWID() default
+├── CustomerType (nvarchar, Discriminator) - "Individual" / "Corporate"
+├── PhoneNumber (nvarchar(20), Unique Index)
+├── Email (nvarchar(255), Unique Index)
+├── Address (nvarchar(500))
+├── IsActive (bit, Default: true)
+├── CreatedDate (datetime2, Default: GETUTCDATE())
+├── UpdatedDate (datetime2, nullable)
+├── DeletedDate (datetime2, nullable)
+├── -- Individual Customer Fields --
+├── FirstName (nvarchar(100))
+├── LastName (nvarchar(100))
+├── NationalId (nchar(11), Unique Index)
+├── DateOfBirth (date)
+├── MotherName (nvarchar(200), nullable)
+├── FatherName (nvarchar(200), nullable)
+├── -- Corporate Customer Fields --
+├── CompanyName (nvarchar(300))
+├── TaxNumber (nchar(10), Unique Index)
+├── TaxOffice (nvarchar(200))
+├── CompanyRegistrationNumber (nvarchar(20), Unique Index)
+├── AuthorizedPersonName (nvarchar(200))
+└── CompanyFoundationDate (date)
+```
+
+### 📈 Performans Optimizasyonları
+- **Unique Index'ler:** Email, PhoneNumber, NationalId, TaxNumber, CompanyRegistrationNumber
+- **Composite Index:** FirstName + LastName (Individual customers için)
+- **Filtreleme Index'leri:** IsActive, DateOfBirth, CompanyFoundationDate
+- **Discriminator Index:** CustomerType üzerinde otomatik index
 
 ## 📊 İş Akışı
 
@@ -184,8 +250,8 @@ dotnet test
 
 Proje aktif geliştirme aşamasındadır. Güncel durum için `todo.md` dosyasına bakınız.
 
-**Tamamlanma Oranı:** %17 (20/119 görev)
-**Son Güncelleme:** 11/06/2025 23:03
+**Tamamlanma Oranı:** %25 (30/119 görev)
+**Son Güncelleme:** 12/06/2025 15:10
 
 ### ✅ Tamamlanan Özellikler:
 - Solution ve proje yapısı oluşturulması
@@ -196,10 +262,15 @@ Proje aktif geliştirme aşamasındadır. Güncel durum için `todo.md` dosyası
 - PagedResult pagination modeli
 - Customer entity hierarchy (Individual/Corporate)
 - Entity Framework Core 9.0 entegrasyonu
+- **BankingContext DbContext implementasyonu** (TPH yaklaşımı)
+- **Entity Configurations** (Customer, IndividualCustomer, CorporateCustomer)
+- **Repository implementasyonları** (Generic + Spesifik repository'ler)
+- **Application layer repository interface'leri** (Clean Architecture uyumlu)
+- **Dependency Injection** (ServiceRegistration extension)
 
 ### 🚧 Geliştirilmekte:
-- DbContext ve Entity Configurations
-- CQRS pattern implementation (Application layer)
+- Database migration'ları ve veritabanı güncellemesi
+- CQRS pattern implementation (Command/Query handlers)
 - Domain services ve business rules
 - WebAPI controllers ve endpoints
 

@@ -40,6 +40,12 @@ IndividualCustomerBusinessRules    // Orchestration
 - Implementasyonlar Persistence katmanında
 - Clean Architecture dependency flow
 
+### ✅ **Exception Handling Sistemi**
+- Global exception yakalama middleware'i
+- RFC 7807 standardına uygun ProblemDetails yanıtları
+- Özel exception tipleri (Business, Validation, Authorization, NotFound)
+- FluentValidation entegrasyonu
+
 ---
 
 ## 🛠️ **Teknoloji Stack**
@@ -103,6 +109,12 @@ BankingApp.CreditSystem/
 │   │   ├── IPaginationRepository.cs         ← Pagination-only operations (ISP)
 │   │   ├── IRepository.cs                   ← Composed Repository Interface (ISP compliant)
 │   │   └── PagedResult.cs                   ← Sayfalama sonuç modeli
+│   ├── CrossCuttingConcerns/
+│   │   └── Exceptions/                      ← Exception handling sistemi
+│   │       ├── Types/                       ← Özel exception tipleri
+│   │       ├── HttpProblemDetails/          ← RFC 7807 uyumlu ProblemDetails sınıfları
+│   │       ├── Handlers/                    ← Exception handler'lar
+│   │       └── Middlewares/                 ← Global exception middleware
 │   └── BankingApp.CreditSystem.Core.csproj
 ├── BankingApp.CreditSystem.Domain/          ← Domain Katmanı (İş Kuralları)
 │   ├── Entities/                            ← Concrete entity'ler
@@ -412,6 +424,56 @@ public interface IRepository<TEntity, TId> :
 
 ---
 
+## 🔄 **Exception Handling Sistemi**
+
+Bu projede kapsamlı bir exception handling sistemi uygulanmıştır:
+
+```
+CrossCuttingConcerns/Exceptions/
+├── Types/                           ← Özel exception tipleri
+│   ├── BusinessException.cs         ← İş kuralı ihlalleri
+│   ├── ValidationException.cs       ← Validasyon hataları (FluentValidation)
+│   ├── AuthorizationException.cs    ← Yetkilendirme hataları
+│   └── NotFoundException.cs         ← Kaynak bulunamadı hataları
+├── HttpProblemDetails/              ← RFC 7807 uyumlu ProblemDetails sınıfları
+│   ├── BusinessProblemDetails.cs    ← 400 Bad Request
+│   ├── ValidationProblemDetails.cs  ← 400 Bad Request (validasyon hataları listesi)
+│   ├── AuthorizationProblemDetails.cs ← 401 Unauthorized
+│   ├── NotFoundProblemDetails.cs    ← 404 Not Found
+│   └── InternalServerErrorProblemDetails.cs ← 500 Internal Server Error
+├── Handlers/                        ← Exception handler'lar
+│   ├── ExceptionHandler.cs          ← Abstract base handler
+│   └── HttpExceptionHandler.cs      ← HTTP yanıtları için concrete handler
+└── Middlewares/                     ← Global exception middleware
+    ├── ExceptionMiddleware.cs       ← Middleware implementasyonu
+    └── ExceptionMiddlewareExtensions.cs ← Extension metodu
+```
+
+### Kullanım Örneği
+
+```csharp
+// Business Rules içinde exception fırlatma
+public class IndividualCustomerBusinessRules
+{
+    public async Task CheckIfNationalIdExistsAsync(string nationalId)
+    {
+        var exists = await _repository.AnyAsync(x => x.NationalId == nationalId);
+        if (exists)
+            throw new BusinessException("Bu TC Kimlik numarası ile kayıtlı müşteri bulunmaktadır.");
+    }
+}
+
+// WebAPI Startup'da middleware'i eklemek için
+public void Configure(IApplicationBuilder app)
+{
+    // ... diğer middleware'ler
+    app.UseCustomExceptionMiddleware(); // Global exception handling
+    // ... diğer middleware'ler
+}
+```
+
+---
+
 ## 🏁 **Proje Durumu**
 
 | Kategori | Tamamlanma | Açıklama |
@@ -422,8 +484,9 @@ public interface IRepository<TEntity, TId> :
 | **Persistence Katmanı** | %90 | Repository implementations ✅ |
 | **WebApi Katmanı** | %0 | Henüz başlanmadı |
 | **SOLID Compliance** | %100 | Tüm prensipler uygulandı ✅ |
+| **Exception Handling** | %100 | Global exception middleware ✅ |
 
-**Genel Tamamlanma:** %42 (55/130 görev)
+**Genel Tamamlanma:** %43 (56/130 görev)
 
 ---
 

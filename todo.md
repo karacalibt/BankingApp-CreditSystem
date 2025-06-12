@@ -260,7 +260,7 @@ WebApi ──→ Application ──→ Domain ──→ Core
 - [ ] Domain events için base class'lar oluşturulması
 - [ ] Pagination için helper class'lar oluşturulması
 - [ ] Result pattern implementasyonu
-- [ ] Exception handling için custom exception class'ları
+- [x] Exception handling için custom exception class'ları
 
 ## 🏛️ Domain Katmanı Geliştirme
 - [x] Entities klasör yapısının oluşturulması
@@ -275,6 +275,12 @@ WebApi ──→ Application ──→ Domain ──→ Core
 - [ ] Domain service'leri (Credit Score Calculator, Risk Assessment)
 - [ ] Domain event'leri tanımlanması
 - [ ] Business rule validasyonları
+- [ ] Docker Compose konfigürasyonu
+- [ ] CI/CD pipeline kurulumu
+- [ ] Environment-specific configuration
+- [ ] Logging ve monitoring kurulumu
+- [ ] Performance monitoring
+- [ ] Error tracking (Application Insights)
 
 ## 💼 Application Katmanı (CQRS) Geliştirme
 - [x] Repository interface'lerinin oluşturulması (ICustomerRepository, IIndividualCustomerRepository, ICorporateCustomerRepository)
@@ -399,23 +405,23 @@ WebApi ──→ Application ──→ Domain ──→ Core
 - [ ] Müşteri kredi geçmişi sorgulama
 - [ ] Kredi limiti hesaplama
 - [ ] Faiz oranı belirleme algoritması
+- [ ] Audit logging sistemi
+- [ ] Soft delete implementasyonu
+- [ ] Data archiving stratejisi
+- [ ] Performance optimization
 
 ## 🎨 İyileştirmeler ve Optimizasyonlar
 - [ ] Caching strategy implementasyonu (Redis)
 - [ ] Background job processing (Hangfire)
 - [ ] Email notification sistemi
 - [ ] SMS notification sistemi
-- [ ] Audit logging sistemi
-- [ ] Soft delete implementasyonu
-- [ ] Data archiving stratejisi
-- [ ] Performance optimization
 
 ---
 
 ## 📅 Proje Durumu
 **Başlangıç Tarihi:** $(Get-Date -Format "dd/MM/yyyy")  
 **Son Güncelleme:** 12/06/2025 17:30  
-**Tamamlanma Oranı:** %42 (55/130 görev)
+**Tamamlanma Oranı:** %43 (56/130 görev)
 
 ---
 
@@ -436,6 +442,13 @@ WebApi ──→ Application ──→ Domain ──→ Core
 - Application katmanı için ServiceRegistration eklendi
 - Tüm bağımlılıklar abstraction'lara çekildi
 - DI container optimize edildi
+
+### ✅ **Exception Handling Sistemi Eklendi**
+- CrossCuttingConcerns/Exceptions altında kapsamlı exception handling sistemi
+- HttpProblemDetails sınıfları ile RFC 7807 uyumlu hata yanıtları
+- Özel exception tipleri (Business, Validation, Authorization, NotFound)
+- ExceptionMiddleware ile global exception yakalama
+- Fluent Validation entegrasyonu için ValidationException desteği
 
 ### ✅ **Build Testi Başarılı**
 - Tüm değişiklikler sonrası proje başarıyla build oluyor
